@@ -76,8 +76,10 @@ static void mdio_write(int skfd, int location, int value)
 static void usage(const char *name)
 {
         printf("usage:\n");
-        printf("\t%s r <dev> <reg>\n", name);
-        printf("\t%s w <dev> <reg> <val>\n", name);
+        printf("\t%s [<options>] r <dev> <reg>\n", name);
+        printf("\t%s [<options>] w <dev> <reg> <val>\n", name);
+        printf("where <options> can be:\n");
+        printf("\t-h | --help                       : show this message\n");
         exit(EXIT_SUCCESS);
 }
 
@@ -87,10 +89,32 @@ static void usage(const char *name)
 
 int main(int argc, char **argv)
 {
+        int c;
+        struct option long_options[] = {
+                { "help",       no_argument, 0, 'h' },
+		{ /* terminator */ }
+        };
+	int option_index = 0;
 	int addr, dev, val;
 	struct mii_data *mii = (struct mii_data *)&ifr.ifr_data;
 
-	if(argc < 2)
+        /* Check the command line */
+        while (1) {
+                c = getopt_long(argc, argv, "h",
+                                long_options, &option_index);
+                if (c == -1)
+                        break;
+                switch (c) {
+                case 'h' :
+                        usage(argv[0]);
+
+                case ':' :
+                case '?' :
+                default :
+                        exit(EXIT_FAILURE);
+                }
+        }
+        if (argc - optind < 2)
 		usage(argv[0]);
 
 	/* Open a basic socket. */
@@ -100,21 +124,21 @@ int main(int argc, char **argv)
 	}
 
 	/* Get the vitals from the interface. */
-	strncpy(ifr.ifr_name, argv[2], IFNAMSIZ);
+	strncpy(ifr.ifr_name, argv[optind + 1], IFNAMSIZ);
 	if (ioctl(skfd, SIOCGMIIPHY, &ifr) < 0) {
 		if (errno != ENODEV)
 		fprintf(stderr, "SIOCGMIIPHY on '%s' failed: %s\n",
-			argv[2], strerror(errno));
+			argv[optind + 1], strerror(errno));
 		return -1;
 	}
 
-	if(argv[1][0] == 'r') {
-		addr = strtol(argv[3], NULL, 16);
+	if(argv[optind + 0][0] == 'r') {
+		addr = strtol(argv[optind + 2], NULL, 16);
 		printf("0x%.4x\n", mdio_read(skfd, addr));
 	}
-	else if(argv[1][0] == 'w') {
-		addr = strtol(argv[3], NULL, 16);
-		val = strtol(argv[4], NULL, 16);
+	else if(argv[optind + 0][0] == 'w') {
+		addr = strtol(argv[optind + 2], NULL, 16);
+		val = strtol(argv[optind + 3], NULL, 16);
 		mdio_write(skfd, addr, val);
 	}
 	else {
