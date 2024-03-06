@@ -82,6 +82,7 @@ static void usage(const char *name)
         printf("where <options> can be:\n");
         printf("\t-h | --help                       : show this message\n");
         printf("\t-d | --debug                      : increase debug level\n");
+        printf("\t-i | --phyid <a>                  : access to phyid <a>\n");
         exit(EXIT_SUCCESS);
 }
 
@@ -95,19 +96,29 @@ int main(int argc, char **argv)
         struct option long_options[] = {
                 { "help",       no_argument, 0, 'h' },
 		{ "debug",      no_argument, 0, 'd' },
+		{ "phyid",      required_argument, 0, 'i' },
 		{ /* terminator */ }
         };
 	int option_index = 0;
+	int phyid = -1;
 	int addr, dev, val;
 	struct mii_data *mii = (struct mii_data *)&ifr.ifr_data;
 
         /* Check the command line */
         while (1) {
-                c = getopt_long(argc, argv, "hd",
+                c = getopt_long(argc, argv, "hdi:",
                                 long_options, &option_index);
                 if (c == -1)
                         break;
                 switch (c) {
+                case 'i' :
+                        phyid = strtol(optarg, NULL, 16);
+			if (phyid < 0) {
+				fprintf(stderr, "invalid phyid value\n");
+				return -1;
+			}
+                        break;
+
                 case 'd' :
                         debug_level++;
                         break;
@@ -137,6 +148,10 @@ int main(int argc, char **argv)
 		fprintf(stderr, "SIOCGMIIPHY on '%s' failed: %s\n",
 			argv[optind + 1], strerror(errno));
 		return -1;
+	}
+	if (phyid >= 0) {
+		struct mii_data *mii = (struct mii_data *)&ifr.ifr_data;
+		mii->phy_id = phyid;
 	}
 	if (debug_level) {
 		struct mii_data *mii = (struct mii_data *)&ifr.ifr_data;
