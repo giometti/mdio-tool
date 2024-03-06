@@ -41,6 +41,7 @@ along with mdio-tool.  If not, see <http://www.gnu.org/licenses/>.
 #endif
 #include "mii.h"
 
+static int debug_level;
 static int skfd = -1;		/* AF_INET socket for ioctl() calls. */
 static struct ifreq ifr;
 
@@ -80,6 +81,7 @@ static void usage(const char *name)
         printf("\t%s [<options>] w <dev> <reg> <val>\n", name);
         printf("where <options> can be:\n");
         printf("\t-h | --help                       : show this message\n");
+        printf("\t-d | --debug                      : increase debug level\n");
         exit(EXIT_SUCCESS);
 }
 
@@ -92,6 +94,7 @@ int main(int argc, char **argv)
         int c;
         struct option long_options[] = {
                 { "help",       no_argument, 0, 'h' },
+		{ "debug",      no_argument, 0, 'd' },
 		{ /* terminator */ }
         };
 	int option_index = 0;
@@ -100,11 +103,15 @@ int main(int argc, char **argv)
 
         /* Check the command line */
         while (1) {
-                c = getopt_long(argc, argv, "h",
+                c = getopt_long(argc, argv, "hd",
                                 long_options, &option_index);
                 if (c == -1)
                         break;
                 switch (c) {
+                case 'd' :
+                        debug_level++;
+                        break;
+
                 case 'h' :
                         usage(argv[0]);
 
@@ -130,6 +137,10 @@ int main(int argc, char **argv)
 		fprintf(stderr, "SIOCGMIIPHY on '%s' failed: %s\n",
 			argv[optind + 1], strerror(errno));
 		return -1;
+	}
+	if (debug_level) {
+		struct mii_data *mii = (struct mii_data *)&ifr.ifr_data;
+		fprintf(stderr, "%s: phyid=%d\n", argv[0], mii->phy_id);
 	}
 
 	if(argv[optind + 0][0] == 'r') {
