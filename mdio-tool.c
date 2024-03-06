@@ -41,8 +41,6 @@ along with mdio-tool.  If not, see <http://www.gnu.org/licenses/>.
 #endif
 #include "mii.h"
 
-#define MAX_ETH		8		/* Maximum # of interfaces */
-
 static int skfd = -1;		/* AF_INET socket for ioctl() calls. */
 static struct ifreq ifr;
 
