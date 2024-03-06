@@ -69,16 +69,29 @@ static void mdio_write(int skfd, int location, int value)
     }
 }
 
+/*
+ * Usage
+ */
+
+static void usage(const char *name)
+{
+        printf("usage:\n");
+        printf("\t%s r <dev> <reg>\n", name);
+        printf("\t%s w <dev> <reg> <val>\n", name);
+        exit(EXIT_SUCCESS);
+}
+
+/*
+ * Main
+ */
 
 int main(int argc, char **argv)
 {
 	int addr, dev, val;
 	struct mii_data *mii = (struct mii_data *)&ifr.ifr_data;
 
-	if(argc < 2) {
-		printf("Usage mii [r/w] [dev] [reg] [val]\n");
-		return 0;
-	}
+	if(argc < 2)
+		usage(argv[0]);
 
 	/* Open a basic socket. */
 	if ((skfd = socket(AF_INET, SOCK_DGRAM,0)) < 0) {
